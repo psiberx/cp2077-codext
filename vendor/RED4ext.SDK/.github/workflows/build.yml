@@ -1,0 +1,47 @@
+name: Build Workflow
+on: [ push, pull_request ]
+
+env:
+  premake: 5.0.0-beta1
+
+jobs:
+  build:
+    name: Build (${{ matrix.config }})
+    runs-on: windows-2022
+
+    strategy:
+      matrix:
+        config: [ Debug, Release ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.2
+
+      - name: Download Premake
+        shell: powershell
+        run: Invoke-WebRequest https://github.com/premake/premake-core/releases/download/v${{ env.premake }}/premake-${{ env.premake }}-windows.zip -OutFile ./premake/premake.zip
+
+      - name: Extract Premake
+        shell: powershell
+        run: Expand-Archive -Path ./premake/premake.zip -DestinationPath ./premake
+
+      - name: Generate projects
+        run: |
+          cd premake
+          ./generate_projects.bat
+
+      - name: Build
+        run: |
+          cd premake/projects
+          MSBuild.exe RED4ext.SDK.sln -v:minimal -m -property:Configuration=${{ matrix.config }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: RED4ext-${{ matrix.config }}
+          path: build/${{ matrix.config }}/

@@ -1,0 +1,8 @@
+/.idea
+/.vs
+/.vscode
+/.xmake
+/build
+/dev
+/src/App/Playground
+CMakeLists.txt
